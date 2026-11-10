@@ -5,11 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,8 +20,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -34,12 +38,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.lab13t_animaciones.ui.theme.Lab13T_animacionesTheme
+
+private enum class ContentState(val label: String) {
+    Loading("Cargando"),
+    Content("Contenido"),
+    Error("Error")
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,6 +71,7 @@ fun AnimationExercises(modifier: Modifier = Modifier) {
     var isVisible by remember { mutableStateOf(false) }
     var isGreen by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
+    var contentState by remember { mutableStateOf(ContentState.Loading) }
     val animatedColor by animateColorAsState(
         targetValue = if (isGreen) Color(0xFF00A676) else Color(0xFF2979FF),
         animationSpec = tween(durationMillis = 700),
@@ -228,6 +240,85 @@ fun AnimationExercises(modifier: Modifier = Modifier) {
                 text = "animateDpAsState anima el tamaño y offset desplaza el cuadro. " +
                     "Aquí offset va antes de size y background, por eso se mueve todo el cuadro. " +
                     "Cambiar el orden puede cambiar qué parte se desplaza.",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFEDE7F6), RoundedCornerShape(24.dp))
+                .padding(18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "4. Cambio de contenido",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color(0xFF4527A0),
+                textAlign = TextAlign.Center
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ContentState.values().forEach { state ->
+                    Button(
+                        onClick = { contentState = state },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 4.dp,
+                            vertical = 8.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (contentState == state) {
+                                Color(0xFF5E35B1)
+                            } else {
+                                Color(0xFF9575CD)
+                            }
+                        )
+                    ) {
+                        Text(
+                            text = state.label,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            }
+            AnimatedContent(
+                targetState = contentState,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(durationMillis = 600)) togetherWith
+                        fadeOut(animationSpec = tween(durationMillis = 350))
+                },
+                label = "contentStateTransition"
+            ) { state ->
+                val (message, color) = when (state) {
+                    ContentState.Loading -> "Cargando información..." to Color(0xFF1976D2)
+                    ContentState.Content -> "¡Contenido listo para mostrar!" to Color(0xFF388E3C)
+                    ContentState.Error -> "Ocurrió un error. Inténtalo de nuevo." to Color(0xFFD32F2F)
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp)
+                        .background(color, RoundedCornerShape(18.dp))
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = message,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+            Text(
+                text = "Elige un estado para cambiar el mensaje con fadeIn y fadeOut.",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
             )
